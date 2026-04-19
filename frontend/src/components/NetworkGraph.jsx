@@ -67,23 +67,40 @@ const NetworkGraph = ({ selectedData, onSelectionUpdate, onDeselect }) => {
             const clickedEle = evt.target;
 
             if (clickedEle.selected()) {
+                // Push the unselect action to the end of the Event Loop (Macrotask Queue).
+                // This ensures our unselect runs AFTER Cytoscape's default synchronous 
+                // behavior (which automatically selects tapped elements) has finished.
                 setTimeout(() => {
                     clickedEle.unselect();
                 }, 0);
             }
         });
 
-        cyInstance.on('select', 'node, edge', (evt) => {
-            selectedEleRef.current = evt.target;
-            triggerUpdate();
-        });
+        let debounceTimer;
 
-        cyInstance.on('unselect', 'node, edge', (evt) => {
-            if (selectedEleRef.current && evt.target.id() === selectedEleRef.current.id()) {
-                selectedEleRef.current = null;
-                onDeselect();
-            }
-        });
+        const handleSelectionChange = () => {
+            clearTimeout(debounceTimer);
+
+            // Debounce selection changes to prevent UI flashing. We need a timer here because Cytoscape fires multiple
+            // synchronous events when selecting/unselecting a group of elements. This delay waits for the entire event
+            // noise to settle before calculating the final number of selected elements. Without debounce (e.g., using
+            // setTimeout 0), drag-selecting floods the event queue with hundreds of updates. This chokes the main
+            // thread, causing the browser to miss the 'mouseup' event, which leaves Cytoscape's native selection box
+            // UI permanently stuck on the screen.
+            debounceTimer = setTimeout(() => {
+                const selectedElements = cyInstance.elements(':selected');
+
+                if (selectedElements.length === 1) {
+                    selectedEleRef.current = selectedElements[0];
+                    triggerUpdate();
+                } else {
+                    selectedEleRef.current = null;
+                    onDeselect();
+                }
+            }, 0);
+        };
+
+        cyInstance.on('select unselect', 'node, edge', handleSelectionChange);
 
         cyInstance.on('tap', (evt) => {
             if (evt.target === cyInstance) {
@@ -104,6 +121,7 @@ const NetworkGraph = ({ selectedData, onSelectionUpdate, onDeselect }) => {
         });
 
         return () => {
+            if (debounceTimer) clearTimeout(debounceTimer);
             if (cyInstance) {
                 cyInstance.destroy();
             }
