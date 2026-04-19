@@ -1,4 +1,4 @@
-File này mô tả thiết kế cho ứng dụng graph-link-analysis, dựa trên các yêu cầu trong file requirements.md
+File này mô tả thiết kế cho ứng dụng graph-link-analysis, dựa trên các yêu cầu tính năng trong file features.md
 
 1. Tầng Giao diện (Frontend Layer)
 

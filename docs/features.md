@@ -1,4 +1,4 @@
-File này nêu các yêu cầu cho ứng dụng graph-link-analysis của tôi
+File này nêu các yêu cầu cho ứng dụng graph-link-analysis
 
 1. Quản lý Vụ án (Workspace Management)
 
