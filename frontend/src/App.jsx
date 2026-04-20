@@ -6,6 +6,7 @@ import Neo4jConnectionStatus from './components/Neo4jConnectionStatus';
 function App() {
   const [selectedData, setSelectedData] = useState(null);
   const [panelStyle, setPanelStyle] = useState({ display: 'none' });
+  const [searchTerm, setSearchTerm] = useState('');
 
   const handleSelectionUpdate = (data, style) => {
     setSelectedData(data);
@@ -29,6 +30,15 @@ function App() {
           </h1>
         </div>
 
+        <div className="flex-1 max-w-md mx-8 pointer-events-auto">
+          <input
+            type="text"
+            placeholder="Tìm kiếm Tên, SDT, Công ty..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full bg-slate-900/50 border border-slate-700 text-sm text-slate-200 rounded-md px-4 py-1.5 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+          />
+        </div>
 
         <Neo4jConnectionStatus status="Active" />
       </header>
@@ -36,6 +46,7 @@ function App() {
       <div className="absolute inset-0 z-0">
         <NetworkGraph
           selectedData={selectedData}
+          searchTerm={searchTerm}
           onSelectionUpdate={handleSelectionUpdate}
           onDeselect={handleDeselect}
         />

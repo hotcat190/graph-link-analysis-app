@@ -120,8 +120,7 @@ export const cytoscapeStyles = [
             'shadow-blur': 25,
             'shadow-color': '#fbbf24',
             'shadow-opacity': 0.8,
-            'width': 60,
-            'height': 60
+            'text-border-color': '#fbbf24',
         }
     },
     {
