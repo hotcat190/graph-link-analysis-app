@@ -16,7 +16,7 @@
 ## Building and Running
 Run `docker-compose up --d` to start the application.
 
-Access the UI application at `http://localhost:3000`.
+Access the UI application at http://localhost:5173.
 
 Optionally, start only the backend and database services with `docker compose up --d api db` and do the following steps to start the frontend locally:
 1. Create a `.env` file in `/frontend/` and put `VITE_API_URL=http://localhost:8000`
