@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import NetworkGraph from './components/NetworkGraph';
 import PropertyPanel from './components/PropertyPanel';
+import Neo4jConnectionStatus from './components/Neo4jConnectionStatus';
 
 function App() {
   const [selectedData, setSelectedData] = useState(null);
@@ -17,16 +18,28 @@ function App() {
   };
 
   return (
-    <div style={{ position: 'relative', width: '100vw', height: '100vh', backgroundColor: '#1e1e1e', overflow: 'hidden' }}>
-      <h2 style={{ position: 'absolute', top: 10, left: 20, color: 'white', zIndex: 10, pointerEvents: 'none' }}>
-        Link Analysis Demo
-      </h2>
+    <div className="relative w-screen h-screen overflow-hidden bg-[#07080a] text-slate-200 font-sans">
+      <div className="absolute inset-0 graph-grid opacity-20 pointer-events-none"></div>
 
-      <NetworkGraph
-        selectedData={selectedData}
-        onSelectionUpdate={handleSelectionUpdate}
-        onDeselect={handleDeselect}
-      />
+      <header className="absolute top-0 left-0 w-full h-14 border-b border-slate-800 bg-slate-950/80 backdrop-blur-md flex items-center justify-between px-6 z-50 pointer-events-none">
+        <div className="flex items-center gap-4">
+          <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center font-bold text-white shadow-lg shadow-blue-900/40">N</div>
+          <h1 className="font-bold tracking-tight text-slate-100">
+            NEXUS <span className="text-blue-500">LINK ANALYSIS</span> <span className="ml-2 text-[10px] text-slate-500 font-mono py-0.5 px-2 border border-slate-700 rounded">v1.2.0-MVP</span>
+          </h1>
+        </div>
+
+
+        <Neo4jConnectionStatus status="Active" />
+      </header>
+
+      <div className="absolute inset-0 z-0">
+        <NetworkGraph
+          selectedData={selectedData}
+          onSelectionUpdate={handleSelectionUpdate}
+          onDeselect={handleDeselect}
+        />
+      </div>
 
       <PropertyPanel
         data={selectedData}

@@ -2,28 +2,23 @@ const PropertyPanel = ({ data, style, onClose }) => {
     if (!data) return null;
 
     return (
-        <div style={{
-            ...style,
-            width: '300px',
-            backgroundColor: '#1e1e1e',
-            color: 'white',
-            padding: '20px',
-            borderRadius: '8px',
-            boxShadow: '0 4px 15px rgba(0,0,0,0.5)',
-            zIndex: 10,
-            fontFamily: 'sans-serif',
-            border: '1px solid #333'
-        }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
-                <h3 style={{ margin: 0, color: '#3498db' }}>Thông tin chi tiết</h3>
-                <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer' }}>✕</button>
+        <div
+            className="glass-panel w-72 rounded-lg shadow-2xl p-4 border-l-4 border-l-blue-500 z-50 transition-all duration-200"
+            style={{ ...style }}
+        >
+            <div className="flex justify-between items-start mb-3">
+                <div>
+                    <h3 className="text-sm font-bold text-white">Thông tin chi tiết</h3>
+                    <p className="text-[10px] text-blue-400 uppercase tracking-tighter">Properties</p>
+                </div>
+                <button onClick={onClose} className="text-slate-500 hover:text-white bg-transparent border-none cursor-pointer text-lg leading-none">✕</button>
             </div>
 
-            <div style={{ fontSize: '14px' }}>
+            <div className="space-y-2 border-t border-slate-700/50 pt-3">
                 {Object.entries(data).map(([key, value]) => (
-                    <div key={key} style={{ marginBottom: '10px', borderBottom: '1px solid #222', paddingBottom: '5px' }}>
-                        <span style={{ color: '#888', fontWeight: 'bold', textTransform: 'capitalize' }}>{key}: </span>
-                        <span>{value?.toString()}</span>
+                    <div key={key} className="flex justify-between items-center text-[11px]">
+                        <span className="text-slate-500 font-bold uppercase">{key}</span>
+                        <span className="font-mono text-slate-300 ml-4 text-right break-all">{value?.toString()}</span>
                     </div>
                 ))}
             </div>
