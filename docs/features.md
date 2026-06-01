@@ -1,35 +1,38 @@
-File này nêu các yêu cầu cho ứng dụng graph-link-analysis
+# Yêu cầu tính năng (Features Checklist)
 
-1. Quản lý Vụ án (Workspace Management)
+## 1. Quản lý Vụ án (Workspace Management)
+- [ ] **Không gian làm việc độc lập (Case Workspace)**
+  - [ ] Cho phép tạo vụ án (Case) mới hoặc chọn vụ án hiện có.
+  - [ ] Dữ liệu đồ thị giữa các vụ án phải hoàn toàn độc lập.
+- [ ] **Import dữ liệu mẫu (Sample Import)**
+  - [ ] Hỗ trợ nạp file tĩnh (JSON/CSV) chứa sẵn danh sách Node và Edge để demo nhanh.
 
-    Không gian làm việc độc lập: Cho phép người dùng chọn hoặc tạo một "Case" (Vụ án) mới. Dữ liệu của mỗi vụ án là một đồ thị (Graph) hoàn toàn tách biệt.
+## 2. Trực quan hóa Mạng lưới (Graph Visualization)
+- [x] **Biểu diễn trực quan (Visual Representation)**
+  - [x] Hiển thị đồ thị trên Canvas 2D.
+  - [x] Phân loại Node bằng màu sắc/icon theo thuộc tính `type` (Ví dụ: Nghi phạm = Đỏ, Tài khoản ngân hàng = Vàng).
+- [x] **Tương tác vật lý (Physical Interaction)**
+  - [x] Hỗ trợ kéo thả (Drag & Drop) Node để gom nhóm thủ công.
+  - [x] Tự động sắp xếp vị trí Node sử dụng thuật toán Force-directed layout để tránh chồng chéo.
+- [x] **Điều hướng Canvas (Canvas Navigation)**
+  - [x] Cho phép Zoom in, Zoom out và Pan (kéo di chuyển bản đồ).
+- [x] **Bảng thông tin chi tiết (Property Panel)**
+  - [x] Click vào Node: Hiển thị thuộc tính chi tiết (Tên, CCCD, Địa chỉ,...).
+  - [x] Click vào Edge: Hiển thị thuộc tính quan hệ (Số tiền chuyển, Thời gian, Thời lượng cuộc gọi,...).
 
-    Import dữ liệu mẫu: Hỗ trợ nạp một file dữ liệu tĩnh (ví dụ: JSON hoặc CSV) chứa sẵn danh sách Node và Edge để có thể demo ngay lập tức mà không cần nhập tay từng dữ liệu.
+## 3. Tìm kiếm & Lọc (Search & Filter)
+- [ ] **Tìm kiếm toàn văn (Full-text Search)**
+  - [ ] Tìm kiếm Node theo Tên, Số điện thoại, Biển số xe,... (Hiện tại mới chỉ tìm kiếm theo `label`).
+  - [x] Focus và highlight Node kết quả trên đồ thị.
+- [ ] **Lọc theo loại (Type Filtering)**
+  - [ ] Ẩn/hiện danh mục Node/Edge cụ thể (Ví dụ: Chỉ hiện giao dịch chuyển tiền, ẩn liên lạc điện thoại).
+- [ ] **Lọc theo ngưỡng (Threshold Filtering)**
+  - [ ] Lọc các quan hệ (Edge) có trọng số cao (Ví dụ: Giao dịch > 100M VNĐ, thời lượng gọi > 10 phút).
 
-2. Trực quan hóa Mạng lưới (Graph Visualization)
-
-    Biểu diễn trực quan: Hiển thị mạng lưới trên một Canvas 2D. Các Node nên được phân loại bằng màu sắc hoặc icon (VD: Node "Nghi phạm" màu đỏ, "Tài khoản ngân hàng" màu vàng).
-
-    Tương tác vật lý: Người dùng có thể kéo thả (Drag & Drop) các Node để gom nhóm thủ công. Hệ thống tự động áp dụng lực đẩy/hút (Force-directed layout) để các Node không đè lên nhau.
-
-    Điều hướng: Zoom in, Zoom out và Pan (kéo di chuyển) toàn bộ bản đồ.
-
-    Bảng thông tin chi tiết (Property Panel): Khi click vào một Node hoặc Edge, một bảng thông tin bên cạnh sẽ hiện ra chi tiết (VD: Click vào Node người sẽ hiện Tên, CCCD, Địa chỉ; Click vào Edge chuyển tiền sẽ hiện Số tiền, Thời gian).
-
-3. Tìm kiếm & Lọc (Search & Filter)
-
-    Tìm kiếm toàn văn (Full-text Search): Gõ tên, số điện thoại hoặc biển số xe để ngay lập tức focus và highlight (làm nổi bật) Node đó trên đồ thị.
-
-    Lọc theo loại (Type Filtering): Cho phép ẩn/hiện các loại Node hoặc Edge cụ thể (VD: "Chỉ hiển thị các mối quan hệ Chuyển tiền", ẩn bớt các mối quan hệ "Gọi điện" để đồ thị bớt rối).
-
-    Lọc theo ngưỡng (Threshold Filtering): Lọc các Edge có trọng số cao (VD: Chỉ hiện các giao dịch trên 100 triệu VNĐ, hoặc các cuộc gọi kéo dài hơn 10 phút).
-
-4. Phân tích Trinh thám (Link Analysis & Intelligence)
-
-Đây là phần tạo ra giá trị lớn nhất cho ứng dụng của bạn:
-
-    Truy vết đường đi ngắn nhất (Shortest Path): Chọn 2 Node bất kỳ (VD: Nghi phạm A và Quan chức B), ứng dụng sẽ tự động tính toán và highlight con đường ngắn nhất kết nối 2 người này (Ví dụ: A -> Gọi điện cho C -> C chuyển tiền cho B).
-
-    Xác định Nút thắt/Trọng tâm (Centrality/High-Alert): Hệ thống tự động highlight các "Node trung tâm" - những Node có nhiều liên kết nhất. (VD: Một số điện thoại rác liên lạc với rất nhiều nghi phạm trong mạng lưới, báo hiệu đây có thể là kẻ chủ mưu hoặc người trung gian).
-
-    Phân cụm tự động (Clustering/Community Detection): Tự động gom các Node có liên kết chằng chịt với nhau thành các nhóm (Community), giúp điều tra viên phát hiện ra một "băng đảng" hoặc "đường dây" ẩn giấu trong một mạng lưới lớn.
+## 4. Phân tích Trinh thám (Link Analysis & Intelligence)
+- [ ] **Truy vết đường đi ngắn nhất (Shortest Path)**
+  - [ ] Chọn 2 Node bất kỳ và tự động tính toán, highlight đường đi kết nối ngắn nhất giữa chúng (Ví dụ: A -> Gọi điện cho C -> C chuyển tiền cho B).
+- [ ] **Xác định trọng tâm/Nút thắt (Centrality/High-Alert)**
+  - [ ] Tự động phát hiện và highlight các Node có nhiều liên kết nhất (Node trung tâm, kẻ chủ mưu hoặc trung gian).
+- [ ] **Phân cụm tự động (Clustering/Community Detection)**
+  - [ ] Gom các Node có liên kết dày đặc thành các nhóm (băng nhóm, đường dây) bằng thuật toán phát hiện cộng đồng.
