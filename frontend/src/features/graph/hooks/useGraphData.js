@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { getCaseGraph } from '../../cases/api/casesApi';
 
 export const useGraphData = (caseId) => {
     const [data, setData] = useState(null);
@@ -10,8 +10,8 @@ export const useGraphData = (caseId) => {
             return;
         }
 
-        axios.get(`${import.meta.env.VITE_API_URL}/api/cases/${caseId}/graph`)
-            .then(response => setData(response.data.elements))
+        getCaseGraph(caseId)
+            .then(resData => setData(resData.elements))
             .catch(error => {
                 console.error("Error fetching graph data for case:", caseId, error);
                 setData(null);

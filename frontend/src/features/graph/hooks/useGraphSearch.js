@@ -39,5 +39,4 @@ export const useGraphSearch = (cyRef, searchTerm) => {
 
         return () => clearTimeout(timer);
     }, [searchTerm, cyRef]);
-
 };
