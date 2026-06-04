@@ -1,5 +1,8 @@
 # Báo Cáo Đánh Giá Định Hướng Dự Án: Graph Link Analysis App
 
+> [!IMPORTANT]
+> **Cập nhật quyết định thử nghiệm (04/06/2026)**: Sau khi trao đổi thêm, dự án quyết định thử nghiệm phương án **Graphology + Sigma.js** làm một công cụ dựng đồ thị song song, tận dụng thư viện `graphology-neo4j` để ánh xạ trực tiếp kết quả câu lệnh Cypher từ Neo4j sang cấu trúc dữ liệu Graphology ở Frontend. Chúng ta sẽ xây dựng một nút chuyển đổi bộ dựng (Engine Switcher) để đánh giá thực tế cả **Cytoscape.js** (canvas 2D) và **Graphology + Sigma.js** (WebGL) trên tập dữ liệu kiểm thử nhỏ (~100 nodes), trước khi đưa ra lựa chọn chính thức cuối cùng cho MVP.
+
 Báo cáo này đánh giá định hướng kiến trúc hiện tại của dự án [graph-link-analysis-app](file:///d:/dev/graph-link-analysis-app) dựa trên các nghiên cứu từ dự án mã nguồn mở [OGI (OpenGraph Intel)](file:///d:/dev/ogi), quy trình đánh giá tính phù hợp nghiệp vụ điều tra hình sự/OSINT thực tế, và yêu cầu hiệu năng xử lý đồ thị quy mô lớn.
 
 ---

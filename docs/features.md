@@ -36,3 +36,11 @@
   - [ ] Tự động phát hiện và highlight các Node có nhiều liên kết nhất (Node trung tâm, kẻ chủ mưu hoặc trung gian).
 - [ ] **Phân cụm tự động (Clustering/Community Detection)**
   - [ ] Gom các Node có liên kết dày đặc thành các nhóm (băng nhóm, đường dây) bằng thuật toán phát hiện cộng đồng.
+
+## 5. Làm giàu dữ liệu tự động (Data Enrichment / Transform)
+- [ ] **Làm giàu dữ liệu tự động (Transform Feature) - [Priority: Low]**
+  - [ ] Hỗ trợ gọi các dịch vụ bên ngoài (DNS lookup, WHOIS, Geolocation, v.v.) để tự động làm giàu thông tin cho một Node được chọn trên Canvas.
+  - [ ] Tự động tạo và liên kết các thực thể (Node) mới và mối quan hệ (Edge) mới vào cơ sở dữ liệu Neo4j.
+  - [ ] Lưu vết lịch sử chạy transform (Audit Log) để theo dõi và phục vụ công tác đối soát.
+
+## 6. AI Investigator [Priority: Low]

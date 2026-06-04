@@ -3,6 +3,8 @@ reference_images
 research
 todolist.md
 graph-link-analysis-app.code-workspace
+maybe_todo_next.md
+.agents/
 
 # Python (Backend)
 __pycache__/

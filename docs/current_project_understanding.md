@@ -20,14 +20,13 @@ Graph Link Analysis App (also referred to as Nexus Link Analysis) is a visual in
   - `DELETE /api/cases/{case_id}`: Delete a case and clean up all associated nodes/edges bearing its `caseId`.
   - `GET /api/cases/{case_id}/graph`: Fetch graph data for Cytoscape.js formatted as JSON.
 
-### 3. Frontend Visualization & UI (Decision Pending Transition)
+### 3. Frontend Visualization & UI (Cytoscape.js & Graphology Experiment)
 - **Current Framework**: React 19, TailwindCSS, and **Cytoscape.js** (2D Canvas rendering).
-- **Target Scale Constraint**: 10,000+ nodes and 30,000+ edges.
-- **Strategic Transition to Sigma.js/Graphology (WebGL)**:
-  - *Current Status*: Cytoscape.js is functional for the MVP phase, but it cannot render the target scale (will freeze above 2,000 nodes due to CPU rendering limitations of Canvas 2D).
-  - *Decision*: Transitioning frontend rendering to **Sigma.js / Graphology** immediately is necessary to avoid building extensive Cytoscape styling and interaction logic that will be discarded.
-  - *Tradeoffs*: Sigma.js offers superior performance (handles 50k+ nodes at 60fps) but requires custom WebGL shaders for advanced nodes/badges/borders styling, lacks native compound nodes (must manage collapsing logic manually in `graphology` state), and requires manual implementation of node/edge interactive editing tools.
-  - *Mechanism*: Detailed documentation on how Graphology, Sigma.js, and ForceAtlas2 Web Workers work together is located at [sigma_graphology_worker_mechanism.md](file:///d:/dev/graph-link-analysis-app/docs/sigma_graphology_worker_mechanism.md).
+- **New Direction / Experiment**:
+  - *Decision*: Experiment with **Graphology** and **Sigma.js** as an alternative rendering engine, driven by the discovery of `graphology-neo4j`.
+  - *Rationale*: The `graphology-neo4j` library provides direct mapping of Neo4j Cypher query results into Graphology state data structure (using `cypherToGraph`), simplifying graph hydration.
+  - *Target Scale Constraint*: Small datasets (~100 nodes) for initial testing, with potential WebGL performance advantages from Sigma.js for future scaling.
+  - *Approach*: Implement an **Engine Switcher** on the UI to allow switching rendering between Cytoscape.js and Sigma.js + Graphology, allowing side-by-side evaluation of UX, visual styling, and development complexity.
 
 ## Developer Tooling & CLI
 - **Seed CLI Utility**: Located in [main.py](file:///d:/dev/graph-link-analysis-app/backend/src/cli/main.py) and [dev.py](file:///d:/dev/graph-link-analysis-app/backend/src/cli/commands/dev.py).
@@ -36,5 +35,12 @@ Graph Link Analysis App (also referred to as Nexus Link Analysis) is a visual in
   - Automatically generates realistic Vietnamese names for Person entities, valid phone numbers, bank accounts, and company names.
   - Builds relationship types based on target and source node types (e.g., `SOHUU`, `GOIDIEN`, `CHUYENTIEN`, `RUATIEN`, `CODONG`).
   - Implements optimized bulk creation using Cypher `UNWIND` batches grouped by node label and relationship signature.
+
+## 4. Future Features (Planned)
+- **Transform (Data Enrichment) Feature [Priority: Low]**:
+  - Hỗ trợ làm giàu thông tin đồ thị bằng cách gọi các dịch vụ bên ngoài (DNS lookup, WHOIS, Geolocation, v.v.) từ các Node đã chọn trên Canvas.
+  - Khác biệt triển khai: OGI sử dụng RDBMS (PostgreSQL/SQLite) với các bảng `entities` và `edges` riêng biệt. Ứng dụng này sử dụng **Neo4j** (LPG - Labeled Property Graph), cho phép lưu trữ Node và Edge trực tiếp dưới dạng cấu trúc đồ thị tự nhiên của cơ sở dữ liệu.
+  - Cô lập Workspace: Các Node và Edge mới được tạo ra từ transform phải được gán thuộc tính `caseId` tương ứng để đảm bảo tính cô lập giữa các vụ án.
+
 
 
