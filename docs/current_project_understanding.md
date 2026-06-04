@@ -20,13 +20,29 @@ Graph Link Analysis App (also referred to as Nexus Link Analysis) is a visual in
   - `DELETE /api/cases/{case_id}`: Delete a case and clean up all associated nodes/edges bearing its `caseId`.
   - `GET /api/cases/{case_id}/graph`: Fetch graph data for Cytoscape.js formatted as JSON.
 
-### 3. Frontend Visualization & UI (Cytoscape.js & Graphology Experiment)
+### 3. Frontend Visualization & UI (Cytoscape.js & Graphology Integration)
 - **Current Framework**: React 19, TailwindCSS, and **Cytoscape.js** (2D Canvas rendering).
-- **New Direction / Experiment**:
-  - *Decision*: Experiment with **Graphology** and **Sigma.js** as an alternative rendering engine, driven by the discovery of `graphology-neo4j`.
-  - *Rationale*: The `graphology-neo4j` library provides direct mapping of Neo4j Cypher query results into Graphology state data structure (using `cypherToGraph`), simplifying graph hydration.
-  - *Target Scale Constraint*: Small datasets (~100 nodes) for initial testing, with potential WebGL performance advantages from Sigma.js for future scaling.
-  - *Approach*: Implement an **Engine Switcher** on the UI to allow switching rendering between Cytoscape.js and Sigma.js + Graphology, allowing side-by-side evaluation of UX, visual styling, and development complexity.
+- **Engine Switcher**: Successfully implemented a toggle button in the Header to switch dynamically between **Cytoscape (2D)** and **Sigma.js (WebGL)** rendering.
+- **Client-Side Bolt Connection**: Browser connects directly to Neo4j via Bolt protocol (`bolt://localhost:7687`) from the client-side utilizing `graphology-neo4j`'s `cypherToGraph` for direct query hydration.
+- **WebGL Shader Program Type Resolution**:
+  - *Technical Issue*: Sigma.js reserves the `type` node/edge attribute to determine the WebGL program (shader) to use (e.g. `'circle'`, `'arrow'`). When hydrated from Neo4j, nodes have properties like `type: 'person'` or `type: 'phone'`. Sigma's constructor immediately throws a `could not find a suitable program for node type "person"` crash.
+  - *Resolution*: Pass baseline `nodeReducer` and `edgeReducer` directly inside the `new Sigma(...)` constructor options that override the visual type to `'circle'` and `'arrow'`. During subsequent rendering cycles, the reducers dynamic settings are updated to maintain color mapping (Person = Blue, Phone = Orange, Company = Purple, Bank = Green) and selections. Since the Graphology graph attributes themselves are not mutated, functions retrieving node properties (like detail panels) still get the correct semantic `type`.
+- **ForceAtlas2 Layout Stabilization & Convergence**:
+  - *Problem*: Nodes exhibit continuous wobbly movement and take too long to stabilize because the ForceAtlas2 physics solver runs endlessly on a separate Web Worker thread.
+  - *Resolution*: Configured optimized settings (`gravity: 0.2` and `slowDown: 10`) to reduce compression forces and dampen node velocities. Implemented an auto-stop timer that stops the worker 4 seconds after mount or manual reset.
+- **Node Drag-and-Drop (Single & Multi-Node)**:
+  - *Interaction*: Single node dragging is implemented by listening to `downNode`, `moveBody`, and `upNode`/`upStage` events.
+  - *Multi-Node*: Shift-clicking nodes toggles their inclusion in a multi-selected Set. Dragging any selected node moves all selected nodes together by the drag delta.
+  - *Worker Synchronization*: Since the layout worker's internal matrix doesn't automatically synchronize attributes updated on the main thread, the layout solver is stopped during drag. Moved nodes are marked with `fixed: true`. When dragging ends, the layout is restarted briefly (3 seconds) to let other nodes adapt to the new positions, and then stopped again.
+- **Rectangle Box Selection**:
+  - *Interaction*: Shift-drag on the background stage draws a dashed bounding box overlay.
+  - *Logic*: Real-time coordinate checking translates graph coordinates to viewport coordinates using `renderer.graphToViewport`. Nodes within the rectangle boundaries are dynamically highlighted and selected.
+- **Floating Controls Panel**:
+  - *Interface*: A glassmorphic overlay containing controls for zooming (In/Out/Center), manual layout Play/Pause toggle (with state indicator), layout re-run/reset (slight randomization + run for 4s), and "Unpin All" to clear `fixed: true` on all nodes.
+- **Property Panel Multi-Selection support**:
+  - *Interface*: Detects if selected data is an array and renders a clean, tag-labeled list of all selected nodes instead of details for a single node.
+- **Docker Workflow constraint**:
+  - Since the `./frontend` container builds without a mapped volume directory, any local changes to frontend files require rebuilding the container via `docker compose up -d --build web` to take effect.
 
 ## Developer Tooling & CLI
 - **Seed CLI Utility**: Located in [main.py](file:///d:/dev/graph-link-analysis-app/backend/src/cli/main.py) and [dev.py](file:///d:/dev/graph-link-analysis-app/backend/src/cli/commands/dev.py).

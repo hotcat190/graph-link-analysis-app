@@ -1,19 +1,25 @@
 import React, { useState } from 'react';
 import { updateCase } from './features/cases/api/casesApi';
 import NetworkGraph from './features/graph/components/NetworkGraph';
+import SigmaGraphView from './features/graph/components/SigmaGraphView';
 import PropertyPanel from './features/graph/components/PropertyPanel';
 import Header from './features/graph/components/Header';
 import CaseSelector from './features/cases/components/CaseSelector';
 import CaseFormModal from './features/cases/components/CaseFormModal';
+import { useGraphologyData } from './features/graph/hooks/useGraphologyData';
 
 function App() {
   const [currentCase, setCurrentCase] = useState(null);
   const [selectedData, setSelectedData] = useState(null);
   const [panelStyle, setPanelStyle] = useState({ display: 'none' });
   const [searchTerm, setSearchTerm] = useState('');
+  const [engine, setEngine] = useState('cytoscape'); // 'cytoscape' or 'sigma'
   
   // Modal state for header-based editing
   const [isHeaderEditOpen, setIsHeaderEditOpen] = useState(false);
+
+  // Fetch graphology data only when using the Sigma.js engine
+  const graphologyResult = useGraphologyData(engine === 'sigma' ? currentCase?.id : null);
 
   const handleSelectionUpdate = (data, style) => {
     setSelectedData(data);
@@ -62,16 +68,33 @@ function App() {
           handleDeselect();
           setCurrentCase(null);
         }}
+        engine={engine}
+        onEngineChange={(newEngine) => {
+          handleDeselect(); // Close details panel when switching engines
+          setEngine(newEngine);
+        }}
       />
 
       <div className="absolute inset-0 z-0">
-        <NetworkGraph
-          caseId={currentCase.id}
-          selectedData={selectedData}
-          searchTerm={searchTerm}
-          onSelectionUpdate={handleSelectionUpdate}
-          onDeselect={handleDeselect}
-        />
+        {engine === 'cytoscape' ? (
+          <NetworkGraph
+            caseId={currentCase.id}
+            selectedData={selectedData}
+            searchTerm={searchTerm}
+            onSelectionUpdate={handleSelectionUpdate}
+            onDeselect={handleDeselect}
+          />
+        ) : (
+          <SigmaGraphView
+            graph={graphologyResult.graph}
+            loading={graphologyResult.loading}
+            error={graphologyResult.error}
+            selectedData={selectedData}
+            searchTerm={searchTerm}
+            onSelectionUpdate={handleSelectionUpdate}
+            onDeselect={handleDeselect}
+          />
+        )}
       </div>
 
       <PropertyPanel

@@ -1,7 +1,7 @@
 import React from 'react';
 import Neo4jConnectionStatus from './Neo4jConnectionStatus';
 
-const Header = ({ currentCase, searchTerm, onSearchChange, onEditCase, onSwitchCase }) => {
+const Header = ({ currentCase, searchTerm, onSearchChange, onEditCase, onSwitchCase, engine, onEngineChange }) => {
     return (
         <header className="absolute top-0 left-0 w-full h-14 border-b border-slate-800 bg-slate-950/80 backdrop-blur-md flex items-center justify-between px-6 z-50 pointer-events-none">
             <div className="flex items-center gap-4 pointer-events-auto">
@@ -53,7 +53,32 @@ const Header = ({ currentCase, searchTerm, onSearchChange, onEditCase, onSwitchC
                 />
             </div>
 
-            <Neo4jConnectionStatus status="Active" />
+            <div className="flex items-center gap-4 pointer-events-auto">
+                <div className="flex bg-slate-900 border border-slate-800 rounded-lg p-0.5 text-xs font-semibold">
+                    <button
+                        onClick={() => onEngineChange('cytoscape')}
+                        className={`cursor-pointer px-3 py-1 rounded-md transition-all duration-200 ${
+                            engine === 'cytoscape'
+                                ? 'bg-blue-600 text-white shadow-md shadow-blue-900/30'
+                                : 'text-slate-400 hover:text-white'
+                        }`}
+                    >
+                        Cytoscape (2D)
+                    </button>
+                    <button
+                        onClick={() => onEngineChange('sigma')}
+                        className={`cursor-pointer px-3 py-1 rounded-md transition-all duration-200 ${
+                            engine === 'sigma'
+                                ? 'bg-blue-600 text-white shadow-md shadow-blue-900/30'
+                                : 'text-slate-400 hover:text-white'
+                        }`}
+                    >
+                        Sigma (WebGL)
+                    </button>
+                </div>
+
+                <Neo4jConnectionStatus status="Active" />
+            </div>
         </header>
     );
 };
