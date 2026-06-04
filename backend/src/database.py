@@ -9,9 +9,12 @@ class Database:
     def __init__(self):
         self._driver = None
 
-    def connect(self):
+    def connect(self, uri=None, user=None, password=None):
         if not self._driver:
-            self._driver = GraphDatabase.driver(URI, auth=(USER, PASSWORD))
+            conn_uri = uri or URI
+            conn_user = user or USER
+            conn_pwd = password or PASSWORD
+            self._driver = GraphDatabase.driver(conn_uri, auth=(conn_user, conn_pwd))
 
     def close(self):
         if self._driver:
