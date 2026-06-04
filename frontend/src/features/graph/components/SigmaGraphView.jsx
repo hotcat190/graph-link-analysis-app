@@ -8,6 +8,7 @@ import FA2Layout from 'graphology-layout-forceatlas2/worker';
  */
 const SigmaGraphView = ({ graph, loading, error, selectedData, searchTerm, onSelectionUpdate, onDeselect }) => {
   const containerRef = useRef(null);
+  const wrapperRef = useRef(null);
   const rendererRef = useRef(null);
   const layoutRef = useRef(null);
   const layoutTimerRef = useRef(null);
@@ -21,11 +22,18 @@ const SigmaGraphView = ({ graph, loading, error, selectedData, searchTerm, onSel
   const [layoutRunning, setLayoutRunning] = useState(false);
   const [selectionBox, setSelectionBox] = useState(null);
 
-  // Dragging and interaction refs
-  const dragStartMousePosRef = useRef(null);
-  const dragNodeStartPositionsRef = useRef({});
-  const isDraggingRef = useRef(false);
-  const draggedNodeRef = useRef(null);
+  // Dragging state ref (OGI style)
+  const dragStateRef = useRef({
+    dragging: false,
+    draggedNode: null,
+    startX: 0,
+    startY: 0,
+    hasMoved: false,
+    startGraphPointer: { x: 0, y: 0 },
+    initialNodePositions: new Map(),
+  });
+
+  // Box selection refs
   const isBoxSelectingRef = useRef(false);
   const boxSelectStartRef = useRef(null);
 
@@ -128,6 +136,9 @@ const SigmaGraphView = ({ graph, loading, error, selectedData, searchTerm, onSel
 
     // Handle node selection click event (for click-to-select and shift-click to toggle)
     renderer.on('clickNode', ({ node, event }) => {
+      const ds = dragStateRef.current;
+      if (ds.hasMoved) return; // Prevent selection click if we just dragged
+
       const isShift = event.original.shiftKey;
       const currentSelection = new Set(selectedNodeIdsRef.current);
 
@@ -149,13 +160,22 @@ const SigmaGraphView = ({ graph, loading, error, selectedData, searchTerm, onSel
       const isShift = e.event.original.shiftKey;
       if (isShift) {
         isBoxSelectingRef.current = true;
-        boxSelectStartRef.current = { x: e.event.x, y: e.event.y };
+        
+        // Calculate positions relative to wrapper bounds
+        const rect = wrapperRef.current.getBoundingClientRect();
+        const startX = e.event.original.clientX - rect.left;
+        const startY = e.event.original.clientY - rect.top;
+
+        boxSelectStartRef.current = { x: startX, y: startY };
         setSelectionBox({
-          startX: e.event.x,
-          startY: e.event.y,
-          currentX: e.event.x,
-          currentY: e.event.y,
+          startX,
+          startY,
+          currentX: startX,
+          currentY: startY,
         });
+
+        // Disable camera panning during box selection
+        renderer.getCamera().disable();
         
         e.event.preventSigmaDefault();
         e.event.original.preventDefault();
@@ -166,16 +186,23 @@ const SigmaGraphView = ({ graph, loading, error, selectedData, searchTerm, onSel
       }
     });
 
-    // Handle node drag start
+    // Handle node drag start (left click only)
     renderer.on('downNode', (e) => {
+      if (e.event.original.button !== 0) return;
+
       if (layoutRef.current && layoutRef.current.isRunning()) {
         layoutRef.current.stop();
         setLayoutRunning(false);
       }
 
-      isDraggingRef.current = true;
       const clickedNode = e.node;
-      draggedNodeRef.current = clickedNode;
+      const ds = dragStateRef.current;
+      ds.dragging = true;
+      ds.draggedNode = clickedNode;
+      ds.hasMoved = false;
+      ds.startX = e.event.x;
+      ds.startY = e.event.y;
+      ds.initialNodePositions = new Map();
 
       const currentSelection = new Set(selectedNodeIdsRef.current);
       const isShift = e.event.original.shiftKey;
@@ -198,112 +225,74 @@ const SigmaGraphView = ({ graph, loading, error, selectedData, searchTerm, onSel
       if (!renderer.getCustomBBox()) renderer.setCustomBBox(renderer.getBBox());
 
       // Save start positions in graph coordinate space
-      dragStartMousePosRef.current = renderer.viewportToGraph(e.event);
-      const nodePositions = {};
+      ds.startGraphPointer = renderer.viewportToGraph(e.event);
       currentSelection.forEach((nodeId) => {
         if (graph.hasNode(nodeId)) {
-          nodePositions[nodeId] = {
-            x: graph.getNodeAttribute(nodeId, 'x'),
-            y: graph.getNodeAttribute(nodeId, 'y'),
-          };
+          ds.initialNodePositions.set(nodeId, {
+            x: Number(graph.getNodeAttribute(nodeId, 'x')) || 0,
+            y: Number(graph.getNodeAttribute(nodeId, 'y')) || 0,
+          });
         }
       });
-      dragNodeStartPositionsRef.current = nodePositions;
+
+      // Disable camera on drag
+      renderer.getCamera().disable();
 
       e.event.preventSigmaDefault();
       e.event.original.preventDefault();
       e.event.original.stopPropagation();
     });
 
-    // Handle dragging movements and box selection dragging
-    renderer.on('moveBody', ({ event }) => {
-      if (isDraggingRef.current && draggedNodeRef.current) {
-        const currentMousePos = renderer.viewportToGraph(event);
-        const startMousePos = dragStartMousePosRef.current;
-        
-        if (startMousePos) {
-          const deltaX = currentMousePos.x - startMousePos.x;
-          const deltaY = currentMousePos.y - startMousePos.y;
+    // Handle dragging movements using Sigma's mouse captor
+    renderer.getMouseCaptor().on('mousemovebody', (event) => {
+      const ds = dragStateRef.current;
+      if (!ds.dragging || !ds.draggedNode) return;
 
-          // Move all selected nodes by delta together
-          const selectedNodes = selectedNodeIdsRef.current;
-          selectedNodes.forEach((nodeId) => {
-            const startPos = dragNodeStartPositionsRef.current[nodeId];
-            if (startPos && graph.hasNode(nodeId)) {
-              const newX = startPos.x + deltaX;
-              const newY = startPos.y + deltaY;
-              graph.setNodeAttribute(nodeId, 'x', newX);
-              graph.setNodeAttribute(nodeId, 'y', newY);
-              graph.setNodeAttribute(nodeId, 'fixed', true); // Keep node pinned
-            }
-          });
+      event.preventSigmaDefault?.();
+      event.original?.preventDefault?.();
+      event.original?.stopPropagation?.();
+
+      // Check if user has moved enough to count as drag
+      const dx = event.x - ds.startX;
+      const dy = event.y - ds.startY;
+      if (!ds.hasMoved && Math.sqrt(dx * dx + dy * dy) > 3) {
+        ds.hasMoved = true;
+      }
+
+      // Convert viewport coords to graph coords
+      const pointerGraphPos = renderer.viewportToGraph(event);
+      const delta = {
+        x: pointerGraphPos.x - ds.startGraphPointer.x,
+        y: pointerGraphPos.y - ds.startGraphPointer.y,
+      };
+
+      for (const [groupNodeId, initialPosition] of ds.initialNodePositions) {
+        if (graph.hasNode(groupNodeId)) {
+          const targetX = initialPosition.x + delta.x;
+          const targetY = initialPosition.y + delta.y;
+          graph.setNodeAttribute(groupNodeId, 'x', targetX);
+          graph.setNodeAttribute(groupNodeId, 'y', targetY);
+          graph.setNodeAttribute(groupNodeId, 'fixed', true); // Keep node pinned
         }
-
-        event.preventSigmaDefault();
-        event.original.preventDefault();
-        event.original.stopPropagation();
-      } else if (isBoxSelectingRef.current && boxSelectStartRef.current) {
-        const start = boxSelectStartRef.current;
-        const currentX = event.x;
-        const currentY = event.y;
-
-        setSelectionBox({
-          startX: start.x,
-          startY: start.y,
-          currentX,
-          currentY,
-        });
-
-        // Real-time calculation of nodes falling inside selection rectangle
-        const xMin = Math.min(start.x, currentX);
-        const xMax = Math.max(start.x, currentX);
-        const yMin = Math.min(start.y, currentY);
-        const yMax = Math.max(start.y, currentY);
-
-        const boxSelectedNodes = new Set();
-        graph.forEachNode((node) => {
-          const displayData = renderer.getNodeDisplayData(node);
-          const screenCoords = renderer.graphToViewport({ x: displayData.x, y: displayData.y });
-
-          if (
-            screenCoords.x >= xMin &&
-            screenCoords.x <= xMax &&
-            screenCoords.y >= yMin &&
-            screenCoords.y <= yMax
-          ) {
-            boxSelectedNodes.add(node);
-          }
-        });
-
-        setSelectedNodeIds(boxSelectedNodes);
-
-        event.preventSigmaDefault();
-        event.original.preventDefault();
-        event.original.stopPropagation();
       }
     });
 
-    // Handle drag release and box selection release
-    const handleUp = () => {
-      if (isDraggingRef.current) {
-        isDraggingRef.current = false;
-        draggedNodeRef.current = null;
+    // Handle drag release using Sigma's mouse captor
+    renderer.getMouseCaptor().on('mouseup', () => {
+      const ds = dragStateRef.current;
+      if (ds.dragging) {
+        ds.dragging = false;
+        ds.draggedNode = null;
         renderer.setCustomBBox(null); // Release locked camera bounding box
         renderer.refresh();
         
+        // Re-enable camera
+        renderer.getCamera().enable();
+
         // Restart layout briefly with selected/moved nodes pinned to let others adjust
         triggerLayoutForDuration(3000);
       }
-      
-      if (isBoxSelectingRef.current) {
-        isBoxSelectingRef.current = false;
-        boxSelectStartRef.current = null;
-        setSelectionBox(null);
-      }
-    };
-
-    renderer.on('upNode', handleUp);
-    renderer.on('upStage', handleUp);
+    });
 
     // Keep the PropertyPanel aligned during zooming, panning, or layout updates
     renderer.on('afterRender', () => {
@@ -448,6 +437,67 @@ const SigmaGraphView = ({ graph, loading, error, selectedData, searchTerm, onSel
     renderer.refresh();
   }, [searchTerm, selectedNodeIds, graph]);
 
+  // Window-bound Box Selection Effect
+  useEffect(() => {
+    if (!selectionBox || !wrapperRef.current || !rendererRef.current) return;
+
+    const handleMove = (event) => {
+      const rect = wrapperRef.current.getBoundingClientRect();
+      const currentX = event.clientX - rect.left;
+      const currentY = event.clientY - rect.top;
+
+      setSelectionBox((current) =>
+        current
+          ? {
+              ...current,
+              currentX,
+              currentY,
+            }
+          : current
+      );
+
+      // Highlight nodes inside the selection box in real-time
+      const renderer = rendererRef.current;
+      const startX = selectionBox.startX;
+      const startY = selectionBox.startY;
+      const xMin = Math.min(startX, currentX);
+      const xMax = Math.max(startX, currentX);
+      const yMin = Math.min(startY, currentY);
+      const yMax = Math.max(startY, currentY);
+
+      const boxSelectedNodes = new Set();
+      graph.forEachNode((node) => {
+        const displayData = renderer.getNodeDisplayData(node);
+        const screenCoords = renderer.graphToViewport({ x: displayData.x, y: displayData.y });
+
+        if (
+          screenCoords.x >= xMin &&
+          screenCoords.x <= xMax &&
+          screenCoords.y >= yMin &&
+          screenCoords.y <= yMax
+        ) {
+          boxSelectedNodes.add(node);
+        }
+      });
+
+      setSelectedNodeIds(boxSelectedNodes);
+    };
+
+    const handleUp = () => {
+      isBoxSelectingRef.current = false;
+      boxSelectStartRef.current = null;
+      setSelectionBox(null);
+      rendererRef.current?.getCamera().enable();
+    };
+
+    window.addEventListener("mousemove", handleMove);
+    window.addEventListener("mouseup", handleUp);
+    return () => {
+      window.removeEventListener("mousemove", handleMove);
+      window.removeEventListener("mouseup", handleUp);
+    };
+  }, [selectionBox, graph]);
+
   // Loading/Error states
   if (loading) {
     return (
@@ -477,7 +527,7 @@ const SigmaGraphView = ({ graph, loading, error, selectedData, searchTerm, onSel
   const isEmpty = graph && graph.order === 0;
 
   return (
-    <div className="relative w-full h-full">
+    <div ref={wrapperRef} className="relative w-full h-full">
       <div ref={containerRef} className="w-full h-full" style={{ background: '#07080a' }} />
       
       {/* Rectangle selection box overlay */}
